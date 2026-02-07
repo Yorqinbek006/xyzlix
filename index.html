@@ -2,53 +2,89 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <title>XYZLIX Tizimi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XYZLIX | Xavfsiz Kirish</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-card { background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 350px; text-align: center; }
+        h2 { color: #38bdf8; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #38bdf8; color: #0f172a; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #7dd3fc; }
+        #status { margin-top: 15px; font-size: 14px; }
+    </style>
 </head>
 <body>
-    <div id="app">Yuklanmoqda...</div>
 
-    <script type="module">
-        // To'g'rilangan payload (Base64)
-        const payload = {
-            k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
-            k2: "eHl6bGl4LmZpcmViYXNlYXBwLmNvbQ==",
-            k3: "eHl6bGl4",
-            k4: "eHl6bGl4LmZpcmViYXNlc3RvcmFnZS5hcHA=",
-            k5: "NzEyNDE5NTcwMTE2",
-            k6: "MToxNzEyNDE5NTcwMTE2OndlYjoyYjk3MmFkMzE2N2ViZTIyMzRiNDkx",
-            k7: "Ry1HRTA0S0tKOVRG"
-        };
+<div class="auth-card">
+    <h2>XYZLIX Kirish</h2>
+    <input type="email" id="email" placeholder="Email manzilingiz">
+    <input type="password" id="password" placeholder="Parolingiz">
+    <button id="loginBtn">Tizimga kirish</button>
+    <div id="status">Firebase xavfsiz ulandi ✅</div>
+</div>
 
-        const b64ToBytes = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        const verify = async (bytes) => (await crypto.subtle.digest("SHA-256", bytes)).byteLength === 32;
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const decode = async (b64) => {
-            const bytes = b64ToBytes(b64);
-            if (!(await verify(bytes))) throw new Error("Xavfsizlik xatosi!");
-            return new TextDecoder().decode(bytes);
-        };
+    const payload = {
+        k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
+        k2: "eHl6bGl4LmZpcmViYXNlYXBwLmNvbQ==",
+        k3: "eHl6bGl4",
+        k4: "eHl6bGl4LmZpcmViYXNlc3RvcmFnZS5hcHA=",
+        k5: "NzEyNDE5NTcwMTE2",
+        k6: "MToxNzEyNDE5NTcwMTE2OndlYjoyYjk3MmFkMzE2N2ViZTIyMzRiNDkx",
+        k7: "Ry1HRTA0S0tKOVRG"
+    };
 
-        (async () => {
-            try {
-                const config = {
-                    apiKey: await decode(payload.k1),
-                    authDomain: await decode(payload.k2),
-                    projectId: await decode(payload.k3),
-                    storageBucket: await decode(payload.k4),
-                    messagingSenderId: await decode(payload.k5),
-                    appId: await decode(payload.k6),
-                    measurementId: await decode(payload.k7)
-                };
+    const b64ToBytes = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const verify = async (bytes) => (await crypto.subtle.digest("SHA-256", bytes)).byteLength === 32;
 
-                const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
-                initializeApp(config);
+    const decode = async (b64) => {
+        const bytes = b64ToBytes(b64);
+        if (!(await verify(bytes))) throw new Error("Security Error");
+        return new TextDecoder().decode(bytes);
+    };
+
+    (async () => {
+        try {
+            const config = {
+                apiKey: await decode(payload.k1),
+                authDomain: await decode(payload.k2),
+                projectId: await decode(payload.k3),
+                storageBucket: await decode(payload.k4),
+                messagingSenderId: await decode(payload.k5),
+                appId: await decode(payload.k6),
+                measurementId: await decode(payload.k7)
+            };
+
+            const app = initializeApp(config);
+            const auth = getAuth(app);
+
+            // Login funksiyasi
+            document.getElementById('loginBtn').addEventListener('click', async () => {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const status = document.getElementById('status');
+
+                status.innerText = "Tekshirilmoqda...";
                 
-                document.getElementById('app').innerHTML = "<h1>Firebase xavfsiz ulandi! ✅</h1>";
-            } catch (e) {
-                document.getElementById('app').innerHTML = "<h1>Xatolik yuz berdi ❌</h1>";
-                console.error(e);
-            }
-        })();
-    </script>
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    status.innerText = "Xush kelibsiz! Muvaffaqiyatli kirdingiz 🔓";
+                    status.style.color = "#4ade80";
+                } catch (error) {
+                    status.innerText = "Xato: Email yoki parol noto'g'ri ❌";
+                    status.style.color = "#f87171";
+                }
+            });
+
+        } catch (e) {
+            document.getElementById('status').innerText = "Tizim xatosi ❌";
+        }
+    })();
+</script>
+
 </body>
 </html>
