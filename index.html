@@ -13,24 +13,17 @@
         .input-group { text-align: left; margin-bottom: 15px; position: relative; }
         label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 14px; }
         
-        input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary); }
+        input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
 
-        /* Ko'zcha belgisi uslubi */
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 35px;
-            cursor: pointer;
-            color: #94a3b8;
-            user-select: none;
-            font-size: 18px;
-        }
+        .toggle-password { position: absolute; right: 12px; top: 35px; cursor: pointer; color: #94a3b8; font-size: 18px; }
 
         button { width: 100%; padding: 12px; background: var(--primary); color: var(--bg); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: #7dd3fc; }
+        button:hover { background: #7dd3fc; transform: translateY(-1px); }
+        button:disabled { background: #64748b; cursor: not-allowed; }
 
-        #dashboard { display: none; width: 90%; max-width: 800px; text-align: center; }
+        #dashboard { display: none; width: 90%; max-width: 800px; text-align: center; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -48,11 +41,12 @@
             <span class="toggle-password" id="togglePassword">👁️</span>
         </div>
         <button id="loginBtn">Kirish</button>
-        <p id="status" style="font-size: 14px; margin-top: 15px;">Tizim tayyor ✅</p>
+        <p id="status" style="font-size: 14px; margin-top: 15px; min-height: 20px;">Tizim tayyor ✅</p>
     </div>
 
     <div id="dashboard">
         <h1>Xush kelibsiz!</h1>
+        <p>Muvaffaqiyatli kirdingiz.</p>
         <button id="logoutBtn" style="width: auto; padding: 10px 20px; background: #ef4444; color: white;">Chiqish</button>
     </div>
 
@@ -60,17 +54,16 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // Ko'zcha funksiyasi
+    // 1. Ko'zcha funksiyasini soddalashtiramiz
     const passwordInput = document.getElementById('password');
     const togglePassword = document.getElementById('togglePassword');
 
     togglePassword.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        togglePassword.textContent = type === 'password' ? '👁️' : '🔒';
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        togglePassword.textContent = isPassword ? '🔒' : '👁️';
     });
 
-    // Firebase Config va qolgan mantiq
     const payload = {
         k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
         k2: "eHl6bGl4LmZpcmViYXNlYXBwLmNvbQ==",
@@ -97,33 +90,57 @@
         const app = initializeApp(config);
         const auth = getAuth(app);
 
-        // Holatni kuzatish
+        // 2. Tizim holatini kuzatish (Login qilingan bo'lsa darrov dashboardga o'tadi)
         onAuthStateChanged(auth, (user) => {
+            const loginSection = document.getElementById('login-section');
+            const dashboard = document.getElementById('dashboard');
             if (user) {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('dashboard').style.display = 'block';
+                loginSection.classList.add('hidden');
+                dashboard.style.display = 'block';
             } else {
-                document.getElementById('login-section').classList.remove('hidden');
-                document.getElementById('dashboard').style.display = 'none';
+                loginSection.classList.remove('hidden');
+                dashboard.style.display = 'none';
             }
         });
 
-        // Kirish
-        document.getElementById('loginBtn').addEventListener('click', async () => {
+        // 3. Kirish mantiqi - Xatolarni batafsil ko'rsatish
+        const loginBtn = document.getElementById('loginBtn');
+        loginBtn.addEventListener('click', async () => {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
             const status = document.getElementById('status');
-            
+
+            if (!user || !pass) {
+                status.innerText = "Login va parolni to'ldiring! ⚠️";
+                status.style.color = "#fbbf24";
+                return;
+            }
+
+            loginBtn.disabled = true;
+            status.innerText = "Tekshirilmoqda... ⏳";
+            status.style.color = "white";
+
             try {
+                // Agar login ichida @ bo'lsa o'zini oladi, bo'lmasa domen qo'shadi
                 const email = user.includes('@') ? user : `${user}@xyzlix.com`;
                 await signInWithEmailAndPassword(auth, email, pass);
+                status.innerText = "Kirish muvaffaqiyatli! ✅";
             } catch (e) {
-                status.innerText = "Xato: Login yoki parol noto'g'ri ❌";
+                loginBtn.disabled = false;
+                console.error("Firebase Xatosi:", e.code); // Konsolda aniq xatoni ko'rasiz
+                
+                // Xatolarga qarab xabar berish
+                if (e.code === 'auth/invalid-credential') {
+                    status.innerText = "Login yoki parol noto'g'ri! ❌";
+                } else if (e.code === 'auth/network-request-failed') {
+                    status.innerText = "Internet ulanishini tekshiring! 🌐";
+                } else {
+                    status.innerText = "Xatolik yuz berdi: " + e.code;
+                }
                 status.style.color = "#f87171";
             }
         });
 
-        // Chiqish
         document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
     })();
 </script>
