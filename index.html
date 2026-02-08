@@ -1,108 +1,38 @@
-<!DOCTYPE html>
-<html lang="uz">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XYZLIX | Login</title>
-    <style>
-        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .auth-card { background: var(--card); padding: 30px; border-radius: 12px; width: 350px; text-align: center; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .input-group { text-align: left; margin-bottom: 15px; position: relative; }
-        label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 14px; }
-        input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--primary); }
-        .toggle-password { position: absolute; right: 12px; top: 35px; cursor: pointer; color: #94a3b8; font-size: 18px; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: var(--bg); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: #7dd3fc; }
-        button:disabled { background: #64748b; cursor: not-allowed; }
-        #status { font-size: 14px; margin-top: 15px; min-height: 20px; }
-        .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-    <div class="auth-card">
-        <h2>XYZLIX</h2>
-        <div class="input-group">
-            <label>Login</label>
-            <input type="text" id="username" placeholder="Loginni kiriting">
-        </div>
-        <div class="input-group">
-            <label>Parol</label>
-            <input type="password" id="password" placeholder="Parolni kiriting">
-            <span class="toggle-password" id="togglePassword">👁️</span>
-        </div>
-        <button id="loginBtn">Kirish</button>
-        <p id="status">Tizim tayyor ✅</p>
-    </div>
+// Kirish tugmasi bosilganda ishlaydigan mantiq
+document.getElementById('loginBtn').onclick = async () => {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+    const status = document.getElementById('status');
+    const btn = document.getElementById('loginBtn');
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    if (!user || !pass) {
+        status.innerText = "Ma'lumotlarni kiriting! ⚠️";
+        return;
+    }
 
-    const payload = {
-        k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
-        k2: "eHl6bGl4LmZpcmViYXNlYXBwLmNvbQ==",
-        k3: "eHl6bGl4",
-        k4: "eHl6bGl4LmZpcmViYXNlc3RvcmFnZS5hcHA=",
-        k5: "NzEyNDE5NTcwMTE2",
-        k6: "MToxNzEyNDE5NTcwMTE2OndlYjoyYjk3MmFkMzE2N2ViZTIyMzRiNDkx",
-        k7: "Ry1HRTA0S0tKOVRG"
-    };
+    btn.disabled = true;
+    status.innerText = "Tekshirilmoqda... ⏳";
 
-    const decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+    try {
+        // Loginni email formatiga o'tkazish
+        const email = user.includes('@') ? user : `${user}@xyzlix.com`;
+        
+        // Firebase orqali kirish
+        await signInWithEmailAndPassword(auth, email, pass);
+        
+        status.innerText = "Muvaffaqiyatli! Sahifa ochilmoqda... ✅";
+        status.style.color = "#4ade80";
 
-    (async () => {
-        const config = {
-            apiKey: await decode(payload.k1),
-            authDomain: await decode(payload.k2),
-            projectId: await decode(payload.k3),
-            storageBucket: await decode(payload.k4),
-            messagingSenderId: await decode(payload.k5),
-            appId: await decode(payload.k6)
-        };
-        const app = initializeApp(config);
-        const auth = getAuth(app);
+        // Ikkinchi oynani ochishga majburlash
+        // GitHub Pages uchun "./home.html" shaklida yozish xavfsizroq
+        setTimeout(() => {
+            window.location.assign("./home.html");
+        }, 500);
 
-        // Ko'zcha funksiyasi
-        document.getElementById('togglePassword').onclick = function() {
-            const passInput = document.getElementById('password');
-            const isPass = passInput.type === 'password';
-            passInput.type = isPass ? 'text' : 'password';
-            this.textContent = isPass ? '🔒' : '👁️';
-        };
-
-        // Avto-redirect: Agar kiritilgan bo'lsa darrov home.html-ga
-        onAuthStateChanged(auth, (user) => {
-            if (user) window.location.replace("home.html");
-        });
-
-        // Kirish mantiqi
-        document.getElementById('loginBtn').onclick = async () => {
-            const user = document.getElementById('username').value.trim();
-            const pass = document.getElementById('password').value;
-            const status = document.getElementById('status');
-            const btn = document.getElementById('loginBtn');
-
-            if(!user || !pass) return status.innerText = "To'ldiring! ⚠️";
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Kirilmoqda...';
-
-            try {
-                const email = user.includes('@') ? user : `${user}@xyzlix.com`;
-                await signInWithEmailAndPassword(auth, email, pass);
-                status.innerText = "Muvaffaqiyatli! ✅";
-                window.location.href = "home.html";
-            } catch (e) {
-                btn.disabled = false;
-                btn.innerText = 'Kirish';
-                status.innerText = "Xato: Login yoki parol noto'g'ri ❌";
-                status.style.color = "#f87171";
-            }
-        };
-    })();
-</script>
-</body>
-</html>
+    } catch (e) {
+        btn.disabled = false;
+        console.error("Xato:", e.code);
+        status.innerText = "Xato: Login yoki parol noto'g'ri ❌";
+        status.style.color = "#f87171";
+    }
+};
