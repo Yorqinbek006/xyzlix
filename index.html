@@ -7,29 +7,22 @@
     <style>
         :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        
-        .auth-card { background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 350px; text-align: center; border: 1px solid #334155; }
-        
+        .auth-card { background: var(--card); padding: 30px; border-radius: 12px; width: 350px; text-align: center; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         .input-group { text-align: left; margin-bottom: 15px; position: relative; }
         label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 14px; }
-        
         input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: var(--bg); color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
-
+        input:focus { border-color: var(--primary); }
         .toggle-password { position: absolute; right: 12px; top: 35px; cursor: pointer; color: #94a3b8; font-size: 18px; }
-
         button { width: 100%; padding: 12px; background: var(--primary); color: var(--bg); border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: #7dd3fc; transform: translateY(-1px); }
+        button:hover { background: #7dd3fc; }
         button:disabled { background: #64748b; cursor: not-allowed; }
-
-        #dashboard { display: none; width: 90%; max-width: 800px; text-align: center; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .hidden { display: none !important; }
+        #status { font-size: 14px; margin-top: 15px; min-height: 20px; }
+        .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
-    <div id="login-section" class="auth-card">
+    <div class="auth-card">
         <h2>XYZLIX</h2>
         <div class="input-group">
             <label>Login</label>
@@ -41,28 +34,12 @@
             <span class="toggle-password" id="togglePassword">👁️</span>
         </div>
         <button id="loginBtn">Kirish</button>
-        <p id="status" style="font-size: 14px; margin-top: 15px; min-height: 20px;">Tizim tayyor ✅</p>
-    </div>
-
-    <div id="dashboard">
-        <h1>Xush kelibsiz!</h1>
-        <p>Muvaffaqiyatli kirdingiz.</p>
-        <button id="logoutBtn" style="width: auto; padding: 10px 20px; background: #ef4444; color: white;">Chiqish</button>
+        <p id="status">Tizim tayyor ✅</p>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    // 1. Ko'zcha funksiyasini soddalashtiramiz
-    const passwordInput = document.getElementById('password');
-    const togglePassword = document.getElementById('togglePassword');
-
-    togglePassword.addEventListener('click', () => {
-        const isPassword = passwordInput.type === 'password';
-        passwordInput.type = isPassword ? 'text' : 'password';
-        togglePassword.textContent = isPassword ? '🔒' : '👁️';
-    });
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const payload = {
         k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
@@ -74,7 +51,7 @@
         k7: "Ry1HRTA0S0tKOVRG"
     };
 
-    const decode = async (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+    const decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
 
     (async () => {
         const config = {
@@ -83,65 +60,48 @@
             projectId: await decode(payload.k3),
             storageBucket: await decode(payload.k4),
             messagingSenderId: await decode(payload.k5),
-            appId: await decode(payload.k6),
-            measurementId: await decode(payload.k7)
+            appId: await decode(payload.k6)
         };
-
         const app = initializeApp(config);
         const auth = getAuth(app);
 
-        // 2. Tizim holatini kuzatish (Login qilingan bo'lsa darrov dashboardga o'tadi)
+        // Ko'zcha funksiyasi
+        document.getElementById('togglePassword').onclick = function() {
+            const passInput = document.getElementById('password');
+            const isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            this.textContent = isPass ? '🔒' : '👁️';
+        };
+
+        // Avto-redirect: Agar kiritilgan bo'lsa darrov home.html-ga
         onAuthStateChanged(auth, (user) => {
-            const loginSection = document.getElementById('login-section');
-            const dashboard = document.getElementById('dashboard');
-            if (user) {
-                loginSection.classList.add('hidden');
-                dashboard.style.display = 'block';
-            } else {
-                loginSection.classList.remove('hidden');
-                dashboard.style.display = 'none';
-            }
+            if (user) window.location.replace("home.html");
         });
 
-        // 3. Kirish mantiqi - Xatolarni batafsil ko'rsatish
-        const loginBtn = document.getElementById('loginBtn');
-        loginBtn.addEventListener('click', async () => {
+        // Kirish mantiqi
+        document.getElementById('loginBtn').onclick = async () => {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
             const status = document.getElementById('status');
+            const btn = document.getElementById('loginBtn');
 
-            if (!user || !pass) {
-                status.innerText = "Login va parolni to'ldiring! ⚠️";
-                status.style.color = "#fbbf24";
-                return;
-            }
+            if(!user || !pass) return status.innerText = "To'ldiring! ⚠️";
 
-            loginBtn.disabled = true;
-            status.innerText = "Tekshirilmoqda... ⏳";
-            status.style.color = "white";
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Kirilmoqda...';
 
             try {
-                // Agar login ichida @ bo'lsa o'zini oladi, bo'lmasa domen qo'shadi
                 const email = user.includes('@') ? user : `${user}@xyzlix.com`;
                 await signInWithEmailAndPassword(auth, email, pass);
-                status.innerText = "Kirish muvaffaqiyatli! ✅";
+                status.innerText = "Muvaffaqiyatli! ✅";
+                window.location.href = "home.html";
             } catch (e) {
-                loginBtn.disabled = false;
-                console.error("Firebase Xatosi:", e.code); // Konsolda aniq xatoni ko'rasiz
-                
-                // Xatolarga qarab xabar berish
-                if (e.code === 'auth/invalid-credential') {
-                    status.innerText = "Login yoki parol noto'g'ri! ❌";
-                } else if (e.code === 'auth/network-request-failed') {
-                    status.innerText = "Internet ulanishini tekshiring! 🌐";
-                } else {
-                    status.innerText = "Xatolik yuz berdi: " + e.code;
-                }
+                btn.disabled = false;
+                btn.innerText = 'Kirish';
+                status.innerText = "Xato: Login yoki parol noto'g'ri ❌";
                 status.style.color = "#f87171";
             }
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+        };
     })();
 </script>
 </body>
