@@ -1,38 +1,110 @@
-// Kirish tugmasi bosilganda ishlaydigan mantiq
-document.getElementById('loginBtn').onclick = async () => {
-    const user = document.getElementById('username').value.trim();
-    const pass = document.getElementById('password').value;
-    const status = document.getElementById('status');
-    const btn = document.getElementById('loginBtn');
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XYZLIX | Login</title>
+    <style>
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: var(--bg); 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+        .auth-card { 
+            background: var(--card); 
+            padding: 30px; 
+            border-radius: 12px; 
+            width: 350px; 
+            text-align: center; 
+            border: 1px solid #334155; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+        }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #94a3b8; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 6px; 
+            border: 1px solid #334155; 
+            background: var(--bg); 
+            color: white; 
+            box-sizing: border-box; 
+        }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: var(--primary); 
+            color: var(--bg); 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px; 
+        }
+        #status { font-size: 14px; margin-top: 15px; }
+    </style>
+</head>
+<body>
 
-    if (!user || !pass) {
-        status.innerText = "Ma'lumotlarni kiriting! ⚠️";
-        return;
-    }
+    <div class="auth-card">
+        <h2>XYZLIX</h2>
+        <div class="input-group">
+            <label>Login</label>
+            <input type="text" id="username" placeholder="Loginni kiriting">
+        </div>
+        <div class="input-group">
+            <label>Parol</label>
+            <input type="password" id="password" placeholder="Parolni kiriting">
+        </div>
+        <button id="loginBtn">Kirish</button>
+        <p id="status">Tizim tayyor ✅</p>
+    </div>
 
-    btn.disabled = true;
-    status.innerText = "Tekshirilmoqda... ⏳";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    try {
-        // Loginni email formatiga o'tkazish
-        const email = user.includes('@') ? user : `${user}@xyzlix.com`;
-        
-        // Firebase orqali kirish
-        await signInWithEmailAndPassword(auth, email, pass);
-        
-        status.innerText = "Muvaffaqiyatli! Sahifa ochilmoqda... ✅";
-        status.style.color = "#4ade80";
+        const payload = {
+            k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
+            k2: "eHl6bGl4LmZpcmViYXNlYXBwLmNvbQ==",
+            k3: "eHl6bGl4"
+        };
+        const decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
 
-        // Ikkinchi oynani ochishga majburlash
-        // GitHub Pages uchun "./home.html" shaklida yozish xavfsizroq
-        setTimeout(() => {
-            window.location.assign("./home.html");
-        }, 500);
+        const config = {
+            apiKey: decode(payload.k1),
+            authDomain: decode(payload.k2),
+            projectId: decode(payload.k3)
+        };
 
-    } catch (e) {
-        btn.disabled = false;
-        console.error("Xato:", e.code);
-        status.innerText = "Xato: Login yoki parol noto'g'ri ❌";
-        status.style.color = "#f87171";
-    }
-};
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+
+        document.getElementById('loginBtn').onclick = async () => {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
+            const status = document.getElementById('status');
+
+            if(!user || !pass) return status.innerText = "To'ldiring! ⚠️";
+
+            try {
+                const email = user.includes('@') ? user : `${user}@xyzlix.com`;
+                await signInWithEmailAndPassword(auth, email, pass);
+                
+                // YO'NALTIRISH: Agar login to'g'ri bo'lsa, home.html ga o'tadi
+                window.location.href = "home.html"; 
+                
+            } catch (e) {
+                status.innerText = "Xato: Login yoki parol noto'g'ri ❌";
+                status.style.color = "#f87171";
+            }
+        };
+    </script>
+</body>
+</html>
