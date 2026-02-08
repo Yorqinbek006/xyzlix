@@ -3,135 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XYZLIX | Boshqaruv paneli</title>
+    <title>XYZLIX | Dashboard</title>
     <style>
-        :root { 
-            --primary: #38bdf8; 
-            --bg: #0f172a; 
-            --card: #1e293b; 
-        }
-        
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background-color: var(--bg); 
-            color: white; 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-        }
-        
-        .content-card { 
-            background: var(--card); 
-            padding: 40px; 
-            border-radius: 15px; 
-            border: 1px solid #334155; 
-            text-align: center; 
-            width: 350px; 
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-        }
-        
-        h2 { 
-            color: var(--primary); 
-            margin: 0 0 15px 0;
-        }
-        
-        p {
-            margin: 10px 0 20px 0;
-            color: #cbd5e1;
-        }
-        
-        button { 
-            margin-top: 20px; 
-            padding: 12px 25px; 
-            background: #ef4444; 
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: 0.3s;
-            width: 100%;
-        }
-        
-        button:hover { 
-            background: #dc2626; 
-            transform: scale(1.05); 
-        }
-        
-        button:active {
-            transform: scale(0.98);
-        }
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .content-card { background: var(--card); padding: 40px; border-radius: 15px; border: 1px solid #334155; text-align: center; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { color: var(--primary); }
+        button { margin-top: 20px; padding: 12px 25px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="content-card">
-        <h2 id="welcomeText">Yuklanmoqda...</h2>
-        <p>Siz tizimga muvaffaqiyatli kirdingiz.</p>
+        <h2 id="welcomeText">Xush kelibsiz! 🎉</h2>
+        <p>Siz muvaffaqiyatli kirdingiz.</p>
         <button id="logoutBtn">Chiqish</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const payload = {
-            k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
-            k2: "eHl6bGl4LmZpcmViYXNlYXBwLmNvbQ==",
-            k3: "eHl6bGl4"
-        };
+    const payload = {
+        k1: "QUl6YVN5Q08zNDg3b09QdURnS2FRVThrelpKNU5xcV81ZW1QblE=",
+        k2: "eHl6bGl4LmZpcmViYXNlYXBwLmNvbQ==",
+        k3: "eHl6bGl4"
+    };
+    const decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
 
-        const decode = (b64) => {
-            try {
-                return new TextDecoder().decode(
-                    Uint8Array.from(atob(b64), c => c.charCodeAt(0))
-                );
-            } catch (error) {
-                console.error("Decoding error:", error);
-                return null;
-            }
-        };
+    const app = initializeApp({ apiKey: decode(payload.k1), authDomain: decode(payload.k2), projectId: decode(payload.k3) });
+    const auth = getAuth(app);
 
-        async function init() {
-            try {
-                const config = {
-                    apiKey: decode(payload.k1),
-                    authDomain: decode(payload.k2),
-                    projectId: decode(payload.k3)
-                };
+    onAuthStateChanged(auth, (user) => {
+        if (!user) window.location.href = "index.html";
+    });
 
-                if (!config.apiKey || !config.authDomain || !config.projectId) {
-                    throw new Error("Configuration error");
-                }
-
-                const app = initializeApp(config);
-                const auth = getAuth(app);
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        document.getElementById('welcomeText').innerText = `Xush kelibsiz, ${user.displayName || 'Foydalanuvchi'}! 🎉`;
-                    } else {
-                        window.location.replace("index.html");
-                    }
-                });
-
-                document.getElementById('logoutBtn').onclick = async () => {
-                    try {
-                        await signOut(auth);
-                        window.location.replace("index.html");
-                    } catch (error) {
-                        console.error("Sign out error:", error);
-                    }
-                };
-            } catch (error) {
-                console.error("Initialization error:", error);
-                document.getElementById('welcomeText').innerText = "Xatolik yuz berdi!";
-            }
-        }
-
-        init();
-    </script>
+    document.getElementById('logoutBtn').onclick = () => {
+        signOut(auth).then(() => window.location.href = "index.html");
+    };
+</script>
 </body>
 </html>
